@@ -46,7 +46,18 @@ SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN PV */
 uint8_t ADXLid = 0;
-float data[3];
+uint16_t Zdata0 = 0;
+uint16_t Zdata1 = 0;
+uint16_t intz = 0;
+uint16_t Xdata0 = 0;
+uint16_t Xdata1 = 0;
+uint16_t Ydata0 = 0;
+uint16_t Ydata1 = 0;
+uint16_t acc = 0;
+uint8_t data[6]={0,0,0,0,0,0};
+
+
+float ZScale = 1/31.0f;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -97,13 +108,13 @@ int main(void)
 
 
   ADXL_InitTypeDef adxl_config;
-  adxl_config.Range = RANGE_2G;
+  adxl_config.Range = 0x0B;
   adxl_config.Resolution = RESOLUTION_FULL;
   adxl_config.AutoSleep = AUTOSLEEPOFF;
   adxl_config.LPMode = LPMODE_NORMAL;
-  adxl_config.Rate = BWRATE_100;
+  adxl_config.Rate = BWRATE_50;
   adxl_config.SPIMode = SPIMODE_4WIRE;
-
+  adxl_config.IntMode = INT_ACTIVELOW;
 
   adxlStatus InitStatus = ADXL_Init(&adxl_config, &ADXLid);
   if(ADXLid == 0xE5)InitStatus = ADXL_OK;
@@ -124,7 +135,24 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  ADXL_getAccel(data, OUTPUT_FLOAT);
+	readRegister(DATA0,data,6);
+	Xdata0 = data[0];
+	Xdata1 = data[1];
+	Ydata0 = data[2];
+	Ydata1 = data[3];
+	Zdata0 = data[4];
+	Zdata1 = data[5];
+	intz = (Zdata1 << 8) | (Zdata0);
+	//intz = ((Zdata1 << 8) & 0x0F00) | (Zdata0 & 0xFF);
+    //acc =  intz * 4;
+    //acc = (int16_t) ((Zdata1*256+Zdata0));
+	acc = ((Zdata1 & 0x03) * 256 + (Zdata0 & 0xFF));
+	if(acc > 511)
+	{
+		acc -= 1024;
+	}
+    __NOP();
+	  //ADXL_getAccel(data, OUTPUT_FLOAT);
   }
   /* USER CODE END 3 */
 }
@@ -187,7 +215,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
   hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;

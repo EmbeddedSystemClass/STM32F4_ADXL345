@@ -74,7 +74,7 @@ void readRegister(uint8_t address,uint8_t * value, uint8_t num)
 		
 		// Setting R/W = 1, i.e.: Read Mode
     address |= (0x80);		
-		
+
 	HAL_GPIO_WritePin(ADXLCS_GPIO_Port,ADXLCS_Pin,GPIO_PIN_RESET);
 	HAL_SPI_Transmit(&SPIhandler,&address,1,100);
 	HAL_SPI_Receive(&SPIhandler,value,num,100);
@@ -240,10 +240,10 @@ adxlStatus ADXL_Init(ADXL_InitTypeDef * adxl, uint8_t * id)
 */
 void ADXL_getAccel(void *Data , uint8_t outputType)
 	{
-	uint8_t data[6]={0,0,0,0,0,0};	
+	uint8_t data[6]={0,0,0,0,0,0};
 	readRegister(DATA0,data,6);
 	float DATA = 0;
-	
+
 	if (outputType == OUTPUT_SIGNED)
 		{
 		int16_t * acc = Data;	
