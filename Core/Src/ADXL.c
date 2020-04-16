@@ -185,12 +185,10 @@ adxlStatus ADXL_Init(ADXL_InitTypeDef * adxl, uint8_t * id)
 	HAL_GPIO_WritePin(ADXLCS_GPIO_Port,ADXLCS_Pin,GPIO_PIN_SET);
 	// Unknown delay should apply
 	delay_us(10);
-	//HAL_Delay(10);
-	uint8_t testval = 0;
 	// The Device Address register is constant, i.e. = 0xE5
 	readRegister(DEVID, id,1);
 	delay_us(10);
-	if (testval != 0xE5) return ADXL_ERR;
+
 	// Init. of BW_RATE and DATAFORMAT registers
 	adxlBW(adxl);
 	adxlFormat(adxl);

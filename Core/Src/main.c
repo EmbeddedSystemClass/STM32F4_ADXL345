@@ -53,7 +53,7 @@ uint16_t Xdata0 = 0;
 uint16_t Xdata1 = 0;
 uint16_t Ydata0 = 0;
 uint16_t Ydata1 = 0;
-uint16_t acc = 0;
+int16_t  acc = 0;
 uint8_t data[6]={0,0,0,0,0,0};
 
 
@@ -108,11 +108,11 @@ int main(void)
 
 
   ADXL_InitTypeDef adxl_config;
-  adxl_config.Range = 0x0B;
+  adxl_config.Range = RANGE_16G;
   adxl_config.Resolution = RESOLUTION_FULL;
   adxl_config.AutoSleep = AUTOSLEEPOFF;
   adxl_config.LPMode = LPMODE_NORMAL;
-  adxl_config.Rate = BWRATE_50;
+  adxl_config.Rate = BWRATE_3200;
   adxl_config.SPIMode = SPIMODE_4WIRE;
   adxl_config.IntMode = INT_ACTIVELOW;
 
@@ -142,15 +142,8 @@ int main(void)
 	Ydata1 = data[3];
 	Zdata0 = data[4];
 	Zdata1 = data[5];
-	intz = (Zdata1 << 8) | (Zdata0);
-	//intz = ((Zdata1 << 8) & 0x0F00) | (Zdata0 & 0xFF);
-    //acc =  intz * 4;
-    //acc = (int16_t) ((Zdata1*256+Zdata0));
-	acc = ((Zdata1 & 0x03) * 256 + (Zdata0 & 0xFF));
-	if(acc > 511)
-	{
-		acc -= 1024;
-	}
+	acc = ((uint8_t)Zdata1<<8)|(uint8_t)Zdata0;
+
     __NOP();
 	  //ADXL_getAccel(data, OUTPUT_FLOAT);
   }
