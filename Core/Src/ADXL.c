@@ -221,6 +221,9 @@ adxlStatus ADXL_Init(ADXL_InitTypeDef * adxl, uint8_t * id)
 			if ( (adxl->LinkMode) == LINKMODEON) reg |= (1 << 5); else reg &= ~(1 << 5);
 			writeRegister(POWER_CTL,reg);
 			
+
+			//writeRegister(INT_ENABLE, 0x80);
+
 	return ADXL_OK;
 	
 }

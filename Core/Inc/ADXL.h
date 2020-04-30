@@ -28,7 +28,7 @@
 extern SPI_HandleTypeDef SPIhandler;
 
 // GPIO definition
-#define ADXLCS_Pin GPIO_PIN_3
+#define ADXLCS_Pin GPIO_PIN_4
 #define ADXLCS_GPIO_Port GPIOA
 
 
