@@ -168,6 +168,7 @@ void Calculate_All_statisitc(float32_t *statisticDataSet, uint16_t dataLength, S
 void Calculate_FFT_RMS(float32_t * bufferforFFT, float32_t * OutputFFTbuffer, int32_t fftSize, Sv *staticInstance)
 {
 	float32_t maxValue = 0;
+	float32_t Speeddatabuffer[2048];
 	uint32_t testIndex = 0;
 	uint32_t ifftFlag = 0;
 	uint32_t doBitReverse = 1;
@@ -181,13 +182,55 @@ void Calculate_FFT_RMS(float32_t * bufferforFFT, float32_t * OutputFFTbuffer, in
 	/* Calculates maxValue and returns corresponding BIN value */
 	arm_max_f32(OutputFFTbuffer, fftSize, &maxValue, &testIndex);
 
-	// for remove low frequency noise (DC component)
+
+	for(uint16_t i = 0; i < fftSize; i++)
+	{
+		Speeddatabuffer[i] = OutputFFTbuffer[i];
+	}
+
+	//TODO: remove low frequency noise (DC component)
 	OutputFFTbuffer[0] = 0;
 	OutputFFTbuffer[1] = 0;
 	OutputFFTbuffer[2] = 0;
 
-
 	staticInstance->Statistic_FreqOvall = Calculate_FreqOverAll(OutputFFTbuffer,2048);
+
+
+	/*
+	 * Compute Speed Ovall
+	 *
+	 * */
+	float32_t sampleCount = 2048;
+	float32_t samplingRate = 3200;
+	float32_t frequencyScale = samplingRate/sampleCount;
+
+	for(uint16_t i = 1; i < fftSize; i++)
+	{
+		if(i < fftSize/2)
+		{
+			if(i ==0)
+			{
+				Speeddatabuffer[i] = Speeddatabuffer[i];
+			}
+			else
+			{
+				Speeddatabuffer[i] = (Speeddatabuffer[i] * 9807) / (2 * 3.1415926 * frequencyScale * i);
+			}
+
+		}
+		else if(i > fftSize/2)
+		{
+			Speeddatabuffer[i] = (Speeddatabuffer[i] * 9807) / (2 * 3.1415926 * frequencyScale * abs(fftSize-i));
+		}
+
+	}
+
+	Speeddatabuffer[0] = 0;
+	Speeddatabuffer[1] = 0;
+	Speeddatabuffer[2] = 0;
+
+	staticInstance->Statistic_SpeedOvall = Calculate_FreqOverAll(Speeddatabuffer,2048);
+
 
 }
 

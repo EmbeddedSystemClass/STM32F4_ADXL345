@@ -10,4 +10,4 @@ Calculate_statistic.c:121:7:Calculate_skewness	48	static
 Calculate_statistic.c:132:7:Calculate_kurtosis	32	static
 Calculate_statistic.c:142:7:Calculate_FreqOverAll	48	static
 Calculate_statistic.c:156:6:Calculate_All_statisitc	32	static
-Calculate_statistic.c:168:6:Calculate_FFT_RMS	40	static
+Calculate_statistic.c:168:6:Calculate_FFT_RMS	8264	static

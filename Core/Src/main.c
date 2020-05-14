@@ -200,6 +200,7 @@ int main(void)
     	accY = ((uint8_t)Ydata1<<8)|(uint8_t)Ydata0;
     	accZ = ((uint8_t)Zdata1<<8)|(uint8_t)Zdata0;
 
+    	//3.9 is scale of LSB(one bit) mg, 1000 is scale to g
     	accXfloat = (float)accX  * 3.9 / 1000;
     	accYfloat = (float)accY  * 3.9 / 1000;
     	accZfloat = (float)accZ  * 3.9 / 1000;
@@ -225,15 +226,24 @@ int main(void)
 		sampleIndex++;
     	if(sampleIndex == dataLength/2)
 		{
+
+    		//Calculate Z axis statistic
     		Calculate_FFT_RMS(ZbufferforFFT, testOutput, fftSize, &Zstatistic_value);
 			Calculate_All_statisitc(ZstatisticDataSet, dataLength/2, &Zstatistic_value);
 
+			//Calculate X axis statistic
     		Calculate_FFT_RMS(XbufferforFFT, testOutput, fftSize, &Xstatistic_value);
 			Calculate_All_statisitc(XstatisticDataSet, dataLength/2, &Xstatistic_value);
 
+			//Calculate Y axis statistic
     		Calculate_FFT_RMS(YbufferforFFT, testOutput, fftSize, &Ystatistic_value);
 			Calculate_All_statisitc(YstatisticDataSet, dataLength/2, &Ystatistic_value);
 
+
+
+
+
+			//Data transmission by uart
     		sampleIndex = 0;
 		}
     	dataReady = false;
@@ -369,7 +379,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		dataReady = true;
 		sampleCount++;
-		if(sampleCount > 3200)
+		if(sampleCount > 2048)
 		{
 			sampleCount = 0;
 		}

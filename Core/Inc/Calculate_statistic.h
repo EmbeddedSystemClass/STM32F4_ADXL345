@@ -2,6 +2,7 @@
 #include "arm_math.h"
 #include <stdio.h>
 #include <math.h>
+#include "stdlib.h"
 
 typedef struct Statistic_value
 {
@@ -15,8 +16,11 @@ typedef struct Statistic_value
 	float32_t Statistic_kurtosis;
 	float32_t Statistic_skewness;
 	float32_t Statistic_FreqOvall;
+	float32_t Statistic_SpeedOvall;
 	float32_t Statistic_FreqPeak[20];
 	float32_t Statistic_p2p;
+
+
 
 	float32_t Statistic_max_Temp;
 	float32_t Statistic_min_Temp;
