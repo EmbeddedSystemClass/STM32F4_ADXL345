@@ -150,6 +150,8 @@ float Calculate_FreqOverAll(float *x, int n)
 	}
 
 	ans = sqrt(ParsevalFftPower)/n;
+
+
 	return ans;
 }
 
@@ -161,7 +163,7 @@ void Calculate_All_statisitc(float32_t *statisticDataSet, uint16_t dataLength, S
 	arm_max_f32(statisticDataSet, dataLength, &staticInstance->Statistic_max, &maxtestIndex);
 	arm_min_f32(statisticDataSet, dataLength, &staticInstance->Statistic_min, &mintestIndex);
 	arm_rms_f32(statisticDataSet, dataLength, &staticInstance->Statistic_rms);
-	staticInstance->Statistic_p2p = (staticInstance->Statistic_max - staticInstance->Statistic_min);
+	staticInstance->Statistic_p2p = 0.92 * (staticInstance->Statistic_max - staticInstance->Statistic_min);
 
 }
 
@@ -228,9 +230,20 @@ void Calculate_FFT_RMS(float32_t * bufferforFFT, float32_t * OutputFFTbuffer, in
 	Speeddatabuffer[0] = 0;
 	Speeddatabuffer[1] = 0;
 	Speeddatabuffer[2] = 0;
+	Speeddatabuffer[3] = 0;
+	Speeddatabuffer[4] = 0;
+
+
+
+
+	Speeddatabuffer[2043] = 0;
+	Speeddatabuffer[2044] = 0;
+	Speeddatabuffer[2045] = 0;
+	Speeddatabuffer[2046] = 0;
+	Speeddatabuffer[2047] = 0;
+
 
 	staticInstance->Statistic_SpeedOvall = Calculate_FreqOverAll(Speeddatabuffer,2048);
-
 
 }
 

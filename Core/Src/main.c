@@ -27,6 +27,7 @@
 #include "arm_const_structs.h"
 #include "arm_math.h"
 #include "Calculate_statistic.h"
+#include "BLE_USART.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,7 +47,11 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+IWDG_HandleTypeDef hiwdg;
+
 SPI_HandleTypeDef hspi1;
+
+UART_HandleTypeDef huart6;
 
 /* USER CODE BEGIN PV */
 uint8_t ADXLid = 0;
@@ -105,12 +110,20 @@ uint32_t mintestIndex = 0;
 float32_t Statistic_rms = 0;
 float32_t Statistic_FreqOvall = 0;
 float32_t Statistic_p2p = 0;
+
+
+
+// Bluetooth structure
+USART_BLE USARTBLE;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_USART6_UART_Init(void);
+static void MX_IWDG_Init(void);
 /* USER CODE BEGIN PFP */
 
 typedef enum {true,false} dataReadyFlag;
@@ -151,6 +164,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI1_Init();
+  MX_USART6_UART_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   delay_init(168);
 
@@ -189,6 +204,7 @@ int main(void)
     readRegister(DATA0,data,6);
     if(dataReady == true)
     {
+
     	readRegister(DATA0,data,6);
     	Xdata0 = data[0];
     	Xdata1 = data[1];
@@ -226,7 +242,7 @@ int main(void)
 		sampleIndex++;
     	if(sampleIndex == dataLength/2)
 		{
-
+    		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
     		//Calculate Z axis statistic
     		Calculate_FFT_RMS(ZbufferforFFT, testOutput, fftSize, &Zstatistic_value);
 			Calculate_All_statisitc(ZstatisticDataSet, dataLength/2, &Zstatistic_value);
@@ -239,12 +255,12 @@ int main(void)
     		Calculate_FFT_RMS(YbufferforFFT, testOutput, fftSize, &Ystatistic_value);
 			Calculate_All_statisitc(YstatisticDataSet, dataLength/2, &Ystatistic_value);
 
-
-
-
-
 			//Data transmission by uart
     		sampleIndex = 0;
+    		USARTBLE.sendflag =1;
+    		BLE_USART(&huart6, &Zstatistic_value);
+    		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET);
+    		HAL_IWDG_Refresh(&hiwdg);
 		}
     	dataReady = false;
 
@@ -271,9 +287,10 @@ void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
   /** Initializes the CPU, AHB and APB busses clocks 
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = 8;
@@ -297,6 +314,34 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief IWDG Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_IWDG_Init(void)
+{
+
+  /* USER CODE BEGIN IWDG_Init 0 */
+
+  /* USER CODE END IWDG_Init 0 */
+
+  /* USER CODE BEGIN IWDG_Init 1 */
+
+  /* USER CODE END IWDG_Init 1 */
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_128;
+  hiwdg.Init.Reload = 4095;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN IWDG_Init 2 */
+
+  /* USER CODE END IWDG_Init 2 */
+
 }
 
 /**
@@ -338,6 +383,39 @@ static void MX_SPI1_Init(void)
 }
 
 /**
+  * @brief USART6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART6_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART6_Init 0 */
+
+  /* USER CODE END USART6_Init 0 */
+
+  /* USER CODE BEGIN USART6_Init 1 */
+
+  /* USER CODE END USART6_Init 1 */
+  huart6.Instance = USART6;
+  huart6.Init.BaudRate = 115200;
+  huart6.Init.WordLength = UART_WORDLENGTH_8B;
+  huart6.Init.StopBits = UART_STOPBITS_1;
+  huart6.Init.Parity = UART_PARITY_NONE;
+  huart6.Init.Mode = UART_MODE_TX_RX;
+  huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart6.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART6_Init 2 */
+
+  /* USER CODE END USART6_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -348,9 +426,14 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3|GPIO_PIN_4, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PA2 */
   GPIO_InitStruct.Pin = GPIO_PIN_2;
@@ -361,9 +444,16 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : PA3 PA4 */
   GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PD12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
@@ -377,12 +467,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 	if(GPIO_Pin == GPIO_PIN_2)
 	{
+
 		dataReady = true;
 		sampleCount++;
 		if(sampleCount > 2048)
 		{
 			sampleCount = 0;
 		}
+
 
 	}
 }
