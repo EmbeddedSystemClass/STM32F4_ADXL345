@@ -54,31 +54,25 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart6;
 
 /* USER CODE BEGIN PV */
-uint8_t ADXLid = 0;
-uint16_t Zdata0 = 0;
-uint16_t Zdata1 = 0;
-uint16_t Xdata0 = 0;
-uint16_t Xdata1 = 0;
-uint16_t Ydata0 = 0;
-uint16_t Ydata1 = 0;
 
-int16_t  accX = 0;
-float32_t accXfloat = 0;
-int16_t  accY = 0;
-float32_t accYfloat = 0;
-int16_t  accZ = 0;
-float32_t accZfloat = 0;
+typedef struct FFTInstance
+{
+	float32_t bufferforFFT[dataLength];
+	float32_t bufferforTimeSV[dataLength/2];
+	uint16_t data0;
+	uint16_t data1;
+	int16_t acceleration;
+	float32_t accelerationfloat;
+
+}fftInstance;
+
+fftInstance XfftInstance;
+fftInstance YfftInstance;
+fftInstance ZfftInstance;
+
+uint8_t ADXLid = 0;
 
 uint8_t data[6]={0,0,0,0,0,0};
-
-float32_t ZbufferforFFT[dataLength];
-float32_t ZbufferforTimeSV[dataLength/2];
-float32_t XbufferforFFT[dataLength];
-float32_t XbufferforTimeSV[dataLength/2];
-float32_t YbufferforFFT[dataLength];
-float32_t YbufferforTimeSV[dataLength/2];
-
-float32_t ZScale = 1/31.0f;
 
 GPIO_PinState pin3status;
 
@@ -96,25 +90,14 @@ float32_t maxValue = 0;
 uint32_t testIndex = 0;
 
 
-float32_t *ZstatisticDataSet = ZbufferforTimeSV;
-float32_t *XstatisticDataSet = XbufferforTimeSV;
-float32_t *YstatisticDataSet = YbufferforTimeSV;
-
-
-
-
-float32_t Statistic_max = 0;
-uint32_t maxtestIndex = 0;
-float32_t Statistic_min = 0;
-uint32_t mintestIndex = 0;
-float32_t Statistic_rms = 0;
-float32_t Statistic_FreqOvall = 0;
-float32_t Statistic_p2p = 0;
-
+float32_t *ZstatisticDataSet = ZfftInstance.bufferforTimeSV;
+float32_t *XstatisticDataSet = XfftInstance.bufferforTimeSV;
+float32_t *YstatisticDataSet = YfftInstance.bufferforTimeSV;
 
 
 // Bluetooth structure
 USART_BLE USARTBLE;
+
 
 /* USER CODE END PV */
 
@@ -143,7 +126,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-  
+
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -206,37 +189,35 @@ int main(void)
     {
 
     	readRegister(DATA0,data,6);
-    	Xdata0 = data[0];
-    	Xdata1 = data[1];
-    	Ydata0 = data[2];
-    	Ydata1 = data[3];
-    	Zdata0 = data[4];
-    	Zdata1 = data[5];
-    	accX = ((uint8_t)Xdata1<<8)|(uint8_t)Xdata0;
-    	accY = ((uint8_t)Ydata1<<8)|(uint8_t)Ydata0;
-    	accZ = ((uint8_t)Zdata1<<8)|(uint8_t)Zdata0;
+    	XfftInstance.data0 = data[0];
+    	XfftInstance.data1 = data[1];
+    	YfftInstance.data0 = data[2];
+    	YfftInstance.data1 = data[3];
+    	ZfftInstance.data0 = data[4];
+    	ZfftInstance.data1 = data[5];
+    	XfftInstance.acceleration = ((uint8_t)XfftInstance.data1<<8)|(uint8_t)XfftInstance.data0;
+    	YfftInstance.acceleration = ((uint8_t)YfftInstance.data1<<8)|(uint8_t)YfftInstance.data0;
+    	ZfftInstance.acceleration = ((uint8_t)ZfftInstance.data1<<8)|(uint8_t)ZfftInstance.data0;
 
     	//3.9 is scale of LSB(one bit) mg, 1000 is scale to g
-    	accXfloat = (float)accX  * 3.9 / 1000;
-    	accYfloat = (float)accY  * 3.9 / 1000;
-    	accZfloat = (float)accZ  * 3.9 / 1000;
+    	XfftInstance.accelerationfloat = (float)XfftInstance.acceleration * 3.9 / 1000;
+    	YfftInstance.accelerationfloat = (float)YfftInstance.acceleration  * 3.9 / 1000;
+    	ZfftInstance.accelerationfloat = (float)ZfftInstance.acceleration  * 3.9 / 1000;
 
     	// move X axis data to buffer
-    	XbufferforFFT[sampleIndex * 2] = accXfloat;
-    	XbufferforFFT[sampleIndex * 2+1] = 0;
-    	XbufferforTimeSV[sampleIndex] = accXfloat;
+    	XfftInstance.bufferforFFT[sampleIndex * 2] = XfftInstance.accelerationfloat;
+    	XfftInstance.bufferforFFT[sampleIndex * 2+1] = 0;
+    	XfftInstance.bufferforTimeSV[sampleIndex] = XfftInstance.accelerationfloat;
 
     	// move Y axis data to buffer
-    	YbufferforFFT[sampleIndex * 2] = accYfloat;
-    	YbufferforFFT[sampleIndex * 2+1] = 0;
-    	YbufferforTimeSV[sampleIndex] = accYfloat;
+    	YfftInstance.bufferforFFT[sampleIndex * 2] = YfftInstance.accelerationfloat;
+    	YfftInstance.bufferforFFT[sampleIndex * 2+1] = 0;
+    	YfftInstance.bufferforTimeSV[sampleIndex] = YfftInstance.accelerationfloat;
 
     	// move Z axis data to buffer
-    	ZbufferforFFT[sampleIndex * 2] = accZfloat;
-    	ZbufferforFFT[sampleIndex * 2+1] = 0;
-    	ZbufferforTimeSV[sampleIndex] = accZfloat;
-
-
+    	ZfftInstance.bufferforFFT[sampleIndex * 2] = ZfftInstance.accelerationfloat;
+    	ZfftInstance.bufferforFFT[sampleIndex * 2+1] = 0;
+    	ZfftInstance.bufferforTimeSV[sampleIndex] = ZfftInstance.accelerationfloat;
 
 
 		sampleIndex++;
@@ -244,15 +225,15 @@ int main(void)
 		{
     		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
     		//Calculate Z axis statistic
-    		Calculate_FFT_RMS(ZbufferforFFT, testOutput, fftSize, &Zstatistic_value);
+    		Calculate_FFT_RMS(ZfftInstance.bufferforFFT, testOutput, fftSize, &Zstatistic_value);
 			Calculate_All_statisitc(ZstatisticDataSet, dataLength/2, &Zstatistic_value);
 
 			//Calculate X axis statistic
-    		Calculate_FFT_RMS(XbufferforFFT, testOutput, fftSize, &Xstatistic_value);
+    		Calculate_FFT_RMS(XfftInstance.bufferforFFT, testOutput, fftSize, &Xstatistic_value);
 			Calculate_All_statisitc(XstatisticDataSet, dataLength/2, &Xstatistic_value);
 
 			//Calculate Y axis statistic
-    		Calculate_FFT_RMS(YbufferforFFT, testOutput, fftSize, &Ystatistic_value);
+    		Calculate_FFT_RMS(YfftInstance.bufferforFFT , testOutput, fftSize, &Ystatistic_value);
 			Calculate_All_statisitc(YstatisticDataSet, dataLength/2, &Ystatistic_value);
 
 			//Data transmission by uart

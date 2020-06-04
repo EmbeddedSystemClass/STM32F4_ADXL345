@@ -163,7 +163,7 @@ void Calculate_All_statisitc(float32_t *statisticDataSet, uint16_t dataLength, S
 	arm_max_f32(statisticDataSet, dataLength, &staticInstance->Statistic_max, &maxtestIndex);
 	arm_min_f32(statisticDataSet, dataLength, &staticInstance->Statistic_min, &mintestIndex);
 	arm_rms_f32(statisticDataSet, dataLength, &staticInstance->Statistic_rms);
-	staticInstance->Statistic_p2p = 0.92 * (staticInstance->Statistic_max - staticInstance->Statistic_min);
+	staticInstance->Statistic_p2p = 0.85 * (staticInstance->Statistic_max - staticInstance->Statistic_min);
 
 }
 
@@ -232,10 +232,11 @@ void Calculate_FFT_RMS(float32_t * bufferforFFT, float32_t * OutputFFTbuffer, in
 	Speeddatabuffer[2] = 0;
 	Speeddatabuffer[3] = 0;
 	Speeddatabuffer[4] = 0;
+	Speeddatabuffer[5] = 0;
+	Speeddatabuffer[6] = 0;
 
-
-
-
+	Speeddatabuffer[2041] = 0;
+	Speeddatabuffer[2042] = 0;
 	Speeddatabuffer[2043] = 0;
 	Speeddatabuffer[2044] = 0;
 	Speeddatabuffer[2045] = 0;
